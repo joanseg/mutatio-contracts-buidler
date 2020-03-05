@@ -42,8 +42,8 @@ contract Mutatio {
         require(msg.sender == exchange, "Is not an exchange");
         _;
     }
-    modifier isTheRequiredAmount(uint _orderId, uint finalAmount) {
-        require(orders[_orderId].minTokens * 499 / 500 <= finalAmount, "Invalid amounts"); //we should be able to check the token contract
+    modifier isTheRequiredAmount(uint _orderId, uint actualTokens) {
+        require(orders[_orderId].minTokens <= actualTokens, "Invalid amounts"); //we should be able to check the token contract
         _;
     }
     modifier onlyOwner() {
@@ -53,7 +53,6 @@ contract Mutatio {
 
     address payable exchange;
     address tokenAddress;
-    address payable thisContract;
 
     constructor(address payable _exchange, address _token) public {
         exchange = _exchange;
@@ -63,6 +62,7 @@ contract Mutatio {
     function ethToTokenSwap(address tokenAddress, uint256 minTokens, uint256 deadline)
         public
         payable
+        // isSupportedToken(tokenAddress) //token needs to be supported
         returns(uint)
     {
         Order memory thisOrder;
@@ -134,14 +134,14 @@ contract Mutatio {
         // spender is your deployed escrow contract address
         require(JALToken(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
         // it should mark the order as completed orderCompleted = true
-        // ethToTokenSwapEscrowCompleted(orderId);
+        ethToTokenSwapEscrowCompleted(orderId);
         return true;
     }
 
-    // function ethToTokenSwapEscrowCompleted(uint orderId)
-    //     public
-    //     payable
-    // {
-    //     require(address(this).transfer(exchange, orders[orderId].ethSold), "The function ethToTokenSwapEscrowCompleted() failed");
-    // }
+    function ethToTokenSwapEscrowCompleted(uint orderId)
+        public
+        payable
+    {
+        exchange.transfer(orders[orderId].ethSold);
+    }
 }
