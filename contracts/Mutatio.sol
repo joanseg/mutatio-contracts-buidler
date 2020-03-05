@@ -129,9 +129,6 @@ contract Mutatio {
         returns(bool)
         // isNotUsedBefore() // the tansaction should not be alredy been used
     {
-        // Botyo needs to approve this contract to tranfer from ERC20(tracker_0x_address).approve(address spender, uint tokens)
-        // tracker_0x_address is the address of the ERC20 contract they want to deposit tokens from ( ContractA )
-        // spender is your deployed escrow contract address
         require(JALToken(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
         // it should mark the order as completed orderCompleted = true
         ethToTokenSwapEscrowCompleted(orderId);

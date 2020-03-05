@@ -13,7 +13,7 @@ let mutatio;
 
 contract('Mutatio', (accounts) => {
   let tokenAddress
-  const ethSold = 9000 
+  const ethSold = 10000 
   const minTokens = 100
   const deadline = Date.now() + 90000 // now plus 15 minutes
 
