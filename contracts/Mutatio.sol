@@ -57,6 +57,10 @@ contract Mutatio {
         require(msg.sender == owner, "Is not the owner");
         _;
     }
+    modifier isNotCompleted(uint _orderId) {
+        require(orders[_orderId].completed == false, "Order might be completed");
+        _;
+    }
 
     address payable exchange;
     address tokenAddress;
@@ -135,6 +139,7 @@ contract Mutatio {
         public
         payable
         isAnExchange()
+        isNotCompleted(orderId)
         isTheRequiredAmount(orderId, actualTokens)
         returns(bool)
         // isNotUsedBefore() // the tansaction should not be alredy been used

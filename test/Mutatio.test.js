@@ -161,6 +161,19 @@ contract('Mutatio', (accounts) => {
 
       assert.equal(ethToTokenSwapInputEscrowCompleted.completed, true, "The event completed property should be true");
     });
+    it('If an order is completed, should not allow to complete', async () => {
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+
+      await catchRevert(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress}));
+    });
   });
 });
 
