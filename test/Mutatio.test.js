@@ -40,21 +40,22 @@ contract('Mutatio', (accounts) => {
         assert.ok(mutatio.address);
       });
 
-      it('deposit function should emit an event with the ethToTokenSwap parameters', async () => {
-        const tx = await mutatio.ethToTokenSwap(
+      it('deposit function should emit an event with the ethToTokenSwapInput parameters', async () => {
+        const tx = await mutatio.ethToTokenSwapInput(
           tokenAddress, 
           minTokens,
           deadline,
           {from: buyerAccount, value: ethSold}
         );
-        const ethToTokenSwapEvents = tx.logs[0].args;
-        console.log(tokenAddress, ethToTokenSwapEvents.tokenAddress, ethSold);
-        assert.equal(ethSold, ethToTokenSwapEvents.ethSold, "ethSold does not match");
-        assert.equal(tokenAddress, ethToTokenSwapEvents.tokenAddress, "tokenAddress does not match");
-        assert.equal(minTokens, ethToTokenSwapEvents.minTokens, "mintTokens does not match");
-        assert.equal(deadline, ethToTokenSwapEvents.deadline, "deadline does not match");
-        assert.equal(buyerAccount, ethToTokenSwapEvents.buyer, "buyerAccount does not match");
-        assert.equal(buyerAccount, ethToTokenSwapEvents.recipient, "recipient account does not match");
+        const ethToTokenSwapInputEvents = tx.logs[0].args;
+
+        assert.equal(ethSold, ethToTokenSwapInputEvents.ethSold, "ethSold does not match");
+        assert.equal(tokenAddress, ethToTokenSwapInputEvents.tokenAddress, "tokenAddress does not match");
+        assert.equal(minTokens, ethToTokenSwapInputEvents.minTokens, "mintTokens does not match");
+        assert.equal(deadline, ethToTokenSwapInputEvents.deadline, "deadline does not match");
+        assert.equal(buyerAccount, ethToTokenSwapInputEvents.buyer, "buyerAccount does not match");
+        assert.equal(buyerAccount, ethToTokenSwapInputEvents.recipient, "recipient account does not match");
+        assert.equal(false, ethToTokenSwapInputEvents.completed, "recipient account does not match");
       });
     });
 
@@ -85,52 +86,93 @@ contract('Mutatio', (accounts) => {
   //   });
   // });
 
-  describe('ethToTokenSwapExchangeCompleted()', async () => {
-    it('The function ethToTokenSwapExchangeCompleted() should succeed if the exchange transfers enough tokens', async () => {
+  describe('ethToTokenSwapInputExchangeCompleted()', async () => {
+    it('The function ethToTokenSwapInputExchangeCompleted() should succeed if the exchange transfers enough tokens', async () => {
       await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
       await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
-      await mutatio.ethToTokenSwap(
+      await mutatio.ethToTokenSwapInput(
         tokenAddress, 
         minTokens,
         deadline,
         {from: buyerAccount, value: ethSold}
       );
 
-      await assert.ok(mutatio.ethToTokenSwapExchangeCompleted(1, minTokens, {from: exchangeAddress}), "ethToTokenSwapExchangeCompleted() failed")
+      await assert.ok(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress}), "ethToTokenSwapInputExchangeCompleted() failed")
       //assert.equal(result, true, "The exchange should be able to complete")
     });
-    it('The function ethToTokenSwapExchangeCompleted() should fail if the exchange does not transfers enough tokens', async () => {
+    it('The function ethToTokenSwapInputExchangeCompleted() should fail if the exchange does not transfers enough tokens', async () => {
       await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
       await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
-      await mutatio.ethToTokenSwap(
+      await mutatio.ethToTokenSwapInput(
         tokenAddress, 
         minTokens,
         deadline,
         {from: buyerAccount, value: ethSold}
       );
 
-      await catchRevert(mutatio.ethToTokenSwapExchangeCompleted(1, minTokens - 1, {from: exchangeAddress}))
+      await catchRevert(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens - 1, {from: exchangeAddress}))
     });
   });
-  describe('ethToTokenSwapExchangeCompleted()', async () => {
-    it('The function ethToTokenSwapEscrowCompleted() should transfer to the exchange the ethSold amount', async () => {
+  describe('ethToTokenSwapInputExchangeCompleted()', async () => {
+    it('The function ethToTokenSwapInputEscrowCompleted() should transfer to the exchange the ethSold amount', async () => {
     console.log(exchangeAddressBalance)
     await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
     await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
-    await mutatio.ethToTokenSwap(
+    await mutatio.ethToTokenSwapInput(
       tokenAddress, 
       minTokens,
       deadline,
       {from: buyerAccount, value: ethSold}
     );
-    await mutatio.ethToTokenSwapExchangeCompleted(1, minTokens, {from: exchangeAddress})
+    await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
     let newExhangeAddressBalance = await web3.eth.getBalance(exchangeAddress)
     let increment = newExhangeAddressBalance - exchangeAddressBalance
     console.log(exchangeAddressBalance)
     console.log(newExhangeAddressBalance)
 
     assert.equal(newExhangeAddressBalance, exchangeAddressBalance, "exchange did not receive the ethSold amount" )
+    });
+    it('Should set the orderId complet property to true', async () => {
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+      const orderDetails = await mutatio.readOrder.call(1);
 
+      assert.equal(orderDetails.completed, true, "The order complete paramater should be true");
+    });
+    it('Should set the orderId complet property to true and emit the correspondent event', async () => {
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      const tx = await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+      const ethToTokenSwapInputEscrowCompleted = tx.logs[0].args;
+      console.log(ethToTokenSwapInputEscrowCompleted);
+
+      assert.equal(ethToTokenSwapInputEscrowCompleted.completed, true, "The event completed property should be true");
+    });
+    it('If an order is completed, should not allow to complete', async () => {
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+
+      await catchRevert(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress}));
     });
   });
 });

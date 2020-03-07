@@ -18,21 +18,28 @@ contract Mutatio {
         uint256 deadline;
         address buyer;
         address recipient;
+        bool completed;
         // address payable exchangeAddress;
         // bool exchangeStarted;
     }
 
     mapping (uint => Order) orders;
 
-    event LogEthToTokenSwap(
+    event LogEthToTokenSwapInput(
         uint orderId,
         uint256 ethSold,
         address tokenAddress,
         uint256 minTokens,
         uint256 deadline,
         address buyer,
-        address recipient
+        address recipient,
+        bool completed
     );
+    event LogEthToTokenSwapInputEscrowCompleted(
+        uint orderId,
+        bool completed
+    );
+
 
     // modifier isNotStarted(uint _orderId) {
     //     require(orders[_orderId].exchangeStarted =! true, "Nos started");
@@ -50,6 +57,10 @@ contract Mutatio {
         require(msg.sender == owner, "Is not the owner");
         _;
     }
+    modifier isNotCompleted(uint _orderId) {
+        require(orders[_orderId].completed == false, "Order might be completed");
+        _;
+    }
 
     address payable exchange;
     address tokenAddress;
@@ -59,7 +70,7 @@ contract Mutatio {
         tokenAddress = _token;
     }
 
-    function ethToTokenSwap(address tokenAddress, uint256 minTokens, uint256 deadline)
+    function ethToTokenSwapInput(address tokenAddress, uint256 minTokens, uint256 deadline)
         public
         payable
         // isSupportedToken(tokenAddress) //token needs to be supported
@@ -72,10 +83,11 @@ contract Mutatio {
         thisOrder.deadline = deadline;
         thisOrder.buyer = msg.sender;
         thisOrder.recipient = msg.sender;
+        thisOrder.completed = false;
         // thisOrder.exchangeStarted = false;
         orderId = orderId + 1;
         orders[orderId] = thisOrder;
-        emit LogEthToTokenSwap(orderId, msg.value, tokenAddress, minTokens, deadline, msg.sender, msg.sender);
+        emit LogEthToTokenSwapInput(orderId, msg.value, tokenAddress, minTokens, deadline, msg.sender, msg.sender, false);
         return orderId;
     }
 
@@ -107,7 +119,8 @@ contract Mutatio {
             uint256 minTokens,
             uint256 deadline,
             address buyer,
-            address recipient
+            address recipient,
+            bool completed
         )
     {
         ethSold = orders[orderId].ethSold;
@@ -116,29 +129,35 @@ contract Mutatio {
         deadline = orders[orderId].deadline;
         buyer = orders[orderId].buyer;
         recipient = orders[orderId].recipient;
+        completed = orders[orderId].completed;
         // exchangeAddress = orders[orderId].exchangeAddress;
         // exchangeStarted = orders[orderId].exchangeStarted;
-        return(ethSold, tokenAddress, minTokens, deadline, buyer, recipient);
+        return(ethSold, tokenAddress, minTokens, deadline, buyer, recipient, completed);
     }
 
-    function ethToTokenSwapExchangeCompleted(uint orderId, uint256 actualTokens)
+    function ethToTokenSwapInputExchangeCompleted(uint orderId, uint256 actualTokens)
         public
         payable
         isAnExchange()
+        isNotCompleted(orderId)
         isTheRequiredAmount(orderId, actualTokens)
         returns(bool)
         // isNotUsedBefore() // the tansaction should not be alredy been used
     {
         require(JALToken(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
         // it should mark the order as completed orderCompleted = true
-        ethToTokenSwapEscrowCompleted(orderId);
+        ethToTokenSwapInputEscrowCompleted(orderId);
         return true;
     }
 
-    function ethToTokenSwapEscrowCompleted(uint orderId)
+    function ethToTokenSwapInputEscrowCompleted(uint orderId)
         public
         payable
+        returns(uint)
     {
         exchange.transfer(orders[orderId].ethSold);
+        orders[orderId].completed = true;
+        emit LogEthToTokenSwapInputEscrowCompleted(orderId, true);
+        return orderId;
     }
 }
