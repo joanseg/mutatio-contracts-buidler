@@ -1,6 +1,7 @@
 .secret
 node_modules
 build
+cache
 
 # Logs
 logs
