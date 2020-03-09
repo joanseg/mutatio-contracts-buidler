@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
-//Import token contract
+//Import token contract https://ethereum.stackexchange.com/questions/70155/how-to-interact-with-erc20-interface
+// https://www.reddit.com/r/ethdev/comments/73mzjr/how_do_you_interact_with_any_erc20_in_a_smart/
 import "./JALToken.sol";
 
 
@@ -64,6 +65,7 @@ contract Mutatio {
 
     address payable exchange;
     address tokenAddress;
+    // mapping (uint => tokenAddress) tokens;
 
     constructor(address payable _exchange, address _token) public {
         exchange = _exchange;

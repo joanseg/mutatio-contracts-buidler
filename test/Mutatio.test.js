@@ -13,7 +13,7 @@ let mutatio;
 
 contract('Mutatio', (accounts) => {
   let tokenAddress
-  const ethSold = 10000 
+  const ethSold = 1000000000000000000 // 1 ether 
   const minTokens = 100
   const deadline = Date.now() + 90000 // now plus 15 minutes
 
@@ -25,13 +25,12 @@ contract('Mutatio', (accounts) => {
   const anotherAddress = accounts[2]
 
   beforeEach( async ()=> {
-      // Get list of all accounts       
+      // Get list of all accounts
       accounts = await web3.eth.getAccounts();
       token = await JALToken.new();
       mutatio = await Mutatio.new(exchangeAddress, token.address);
       tokenAddress = token.address;
       exchangeAddressBalance = await web3.eth.getBalance(exchangeAddress);
-
   });
 
   describe('Mutatio Contract', () => {
@@ -42,7 +41,7 @@ contract('Mutatio', (accounts) => {
 
       it('deposit function should emit an event with the ethToTokenSwapInput parameters', async () => {
         const tx = await mutatio.ethToTokenSwapInput(
-          tokenAddress, 
+          tokenAddress,
           minTokens,
           deadline,
           {from: buyerAccount, value: ethSold}
@@ -176,4 +175,3 @@ contract('Mutatio', (accounts) => {
     });
   });
 });
-
