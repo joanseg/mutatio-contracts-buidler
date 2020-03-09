@@ -24,6 +24,8 @@ contract Mutatio {
 
     uint public orderId;
 
+    mapping(address => bool) public tokens;
+
     struct Order {
         uint256 ethSold;
         address tokenAddress;
@@ -74,20 +76,33 @@ contract Mutatio {
         require(orders[_orderId].completed == false, "Order might be completed");
         _;
     }
+    modifier isSupportedToken(address _tokenAddress) {
+        require(tokens[_tokenAddress] == true, "The token is not supported");
+        _;
+    }
 
     address payable exchange;
     address tokenAddress;
-    // mapping (uint => tokenAddress) tokens;
 
     constructor(address payable _exchange, address _token) public {
         exchange = _exchange;
         tokenAddress = _token;
+        tokens[_token] = true;
+    }
+
+    function addSupportedToken(address _newToken)
+        public
+        onlyOwner()
+        returns(address newToken)
+    {
+        tokens[_newToken] = true;
+        return _newToken;
     }
 
     function ethToTokenSwapInput(address tokenAddress, uint256 minTokens, uint256 deadline)
         public
         payable
-        // isSupportedToken(tokenAddress) //token needs to be supported
+        isSupportedToken(tokenAddress)
         returns(uint)
     {
         Order memory thisOrder;

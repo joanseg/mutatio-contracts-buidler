@@ -23,6 +23,8 @@ contract('Mutatio', (accounts) => {
   const buyerAccount = accounts[1]
   const exchangeAddress = accounts[3]
   const anotherAddress = accounts[2]
+  const unsupportedToken = accounts[4]
+  const supportedToken = accounts[5]
 
   beforeEach( async ()=> {
       // Get list of all accounts
@@ -38,25 +40,40 @@ contract('Mutatio', (accounts) => {
         console.log("Mutatio contract deployed on address: ", mutatio.address)
         assert.ok(mutatio.address);
       });
-
-      it('deposit function should emit an event with the ethToTokenSwapInput parameters', async () => {
-        const tx = await mutatio.ethToTokenSwapInput(
-          tokenAddress,
-          minTokens,
-          deadline,
-          {from: buyerAccount, value: ethSold}
-        );
-        const ethToTokenSwapInputEvents = tx.logs[0].args;
-
-        assert.equal(ethSold, ethToTokenSwapInputEvents.ethSold, "ethSold does not match");
-        assert.equal(tokenAddress, ethToTokenSwapInputEvents.tokenAddress, "tokenAddress does not match");
-        assert.equal(minTokens, ethToTokenSwapInputEvents.minTokens, "mintTokens does not match");
-        assert.equal(deadline, ethToTokenSwapInputEvents.deadline, "deadline does not match");
-        assert.equal(buyerAccount, ethToTokenSwapInputEvents.buyer, "buyerAccount does not match");
-        assert.equal(buyerAccount, ethToTokenSwapInputEvents.recipient, "recipient account does not match");
-        assert.equal(false, ethToTokenSwapInputEvents.completed, "recipient account does not match");
-      });
     });
+
+  describe('Mutatio ethToTokenSwapInput', async () => {
+    it('function should emit an event with the ethToTokenSwapInput parameters', async () => {
+      const tx = await mutatio.ethToTokenSwapInput(
+        tokenAddress,
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      const ethToTokenSwapInputEvents = tx.logs[0].args;
+
+      assert.equal(ethSold, ethToTokenSwapInputEvents.ethSold, "ethSold does not match");
+      assert.equal(tokenAddress, ethToTokenSwapInputEvents.tokenAddress, "tokenAddress does not match");
+      assert.equal(minTokens, ethToTokenSwapInputEvents.minTokens, "mintTokens does not match");
+      assert.equal(deadline, ethToTokenSwapInputEvents.deadline, "deadline does not match");
+      assert.equal(buyerAccount, ethToTokenSwapInputEvents.buyer, "buyerAccount does not match");
+      assert.equal(buyerAccount, ethToTokenSwapInputEvents.recipient, "recipient account does not match");
+      assert.equal(false, ethToTokenSwapInputEvents.completed, "recipient account does not match");
+    });
+    it('it should reject if the token is not supported', async () => {
+      await catchRevert(mutatio.ethToTokenSwapInput(unsupportedToken, minTokens, deadline, {from: buyerAccount, value: ethSold}));
+    });
+    it('it should work if the token is supported', async () => {
+      await mutatio.addSupportedToken(supportedToken, {from: deployAccount});
+      assert.ok(await mutatio.ethToTokenSwapInput(supportedToken, minTokens, deadline, {from: buyerAccount, value: ethSold}))
+    });
+  });
+
+  // describe('Mutatio ethToTokenSwapInput', async () => {
+  //   it('function should emit an event with the ethToTokenSwapInput parameters', async () => {
+      
+  //   });
+  // });
 
   // describe('exchangeStarted()', () => {
   //   it('just an exchange should be able to call exchangeStarted()', async () => {
@@ -112,6 +129,7 @@ contract('Mutatio', (accounts) => {
       await catchRevert(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens - 1, {from: exchangeAddress}))
     });
   });
+  
   describe('ethToTokenSwapInputExchangeCompleted()', async () => {
     it('The function ethToTokenSwapInputEscrowCompleted() should transfer to the exchange the ethSold amount', async () => {
     console.log(exchangeAddressBalance)
