@@ -158,7 +158,7 @@ contract Mutatio {
         returns(bool)
         // isNotUsedBefore() // the tansaction should not be alredy been used
     {
-        require(JALToken(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
+        require(ERC20(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
         // it should mark the order as completed orderCompleted = true
         ethToTokenSwapInputEscrowCompleted(orderId);
         return true;

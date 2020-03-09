@@ -1,5 +1,5 @@
 const Mutatio = artifacts.require('Mutatio');
-const JALToken = artifacts.require('JALToken');
+const ERC20 = artifacts.require('JALToken');
 
 let catchRevert = require("./exceptionsHelpers.js").catchRevert;
 
@@ -27,7 +27,7 @@ contract('Mutatio', (accounts) => {
   beforeEach( async ()=> {
       // Get list of all accounts
       accounts = await web3.eth.getAccounts();
-      token = await JALToken.new();
+      token = await ERC20.new();
       mutatio = await Mutatio.new(exchangeAddress, token.address);
       tokenAddress = token.address;
       exchangeAddressBalance = await web3.eth.getBalance(exchangeAddress);
