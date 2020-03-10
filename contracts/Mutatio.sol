@@ -99,6 +99,15 @@ contract Mutatio {
         return _newToken;
     }
 
+    function removeSupportedToken(address _token)
+        public
+        onlyOwner()
+        returns(address token)
+    {
+        tokens[_token] = false;
+        return _token;
+    }
+
     function ethToTokenSwapInput(address tokenAddress, uint256 minTokens, uint256 deadline)
         public
         payable
