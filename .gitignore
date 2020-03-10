@@ -1,8 +1,8 @@
 .secret
 node_modules
 build
-cache
-artifacts
+cache/
+artifacts/
 
 # Logs
 logs

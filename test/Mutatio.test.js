@@ -61,11 +61,37 @@ contract('Mutatio', (accounts) => {
       assert.equal(false, ethToTokenSwapInputEvents.completed, "recipient account does not match");
     });
     it('it should reject if the token is not supported', async () => {
-      await catchRevert(mutatio.ethToTokenSwapInput(unsupportedToken, minTokens, deadline, {from: buyerAccount, value: ethSold}));
+      await catchRevert(
+        mutatio.ethToTokenSwapInput(
+          unsupportedToken,
+          minTokens,
+          deadline,
+          {from: buyerAccount, value: ethSold}
+        )
+      );
     });
     it('it should work if the token is supported', async () => {
       await mutatio.addSupportedToken(supportedToken, {from: deployAccount});
-      assert.ok(await mutatio.ethToTokenSwapInput(supportedToken, minTokens, deadline, {from: buyerAccount, value: ethSold}))
+      assert.ok(
+        await mutatio.ethToTokenSwapInput(
+          supportedToken,
+          minTokens,
+          deadline,
+          {from: buyerAccount, value: ethSold}
+        )
+      )
+    });
+    it('it should not work if the supported token has been removed', async () => {
+      await mutatio.addSupportedToken(supportedToken, {from: deployAccount});
+      await mutatio.removeSupportedToken(supportedToken, {from: deployAccount});
+      await catchRevert(
+        mutatio.ethToTokenSwapInput(
+          supportedToken,
+          minTokens,
+          deadline,
+          {from: buyerAccount, value: ethSold}
+        )
+      )
     });
   });
 
@@ -129,7 +155,7 @@ contract('Mutatio', (accounts) => {
       await catchRevert(mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens - 1, {from: exchangeAddress}))
     });
   });
-  
+
   describe('ethToTokenSwapInputExchangeCompleted()', async () => {
     it('The function ethToTokenSwapInputEscrowCompleted() should transfer to the exchange the ethSold amount', async () => {
     console.log(exchangeAddressBalance)
