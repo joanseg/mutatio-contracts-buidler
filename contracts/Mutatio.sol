@@ -173,6 +173,7 @@ contract Mutatio {
         return(ethSold, tokenAddress, minTokens, deadline, buyer, recipient, completed);
     }
 
+
     function ethToTokenSwapInputExchangeCompleted(uint orderId, uint256 actualTokens)
         public
         payable
@@ -182,8 +183,7 @@ contract Mutatio {
         returns(bool)
         // isNotUsedBefore() // the tansaction should not be alredy been used
     {
-        require(ERC20(tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
-        // it should mark the order as completed orderCompleted = true
+        require(ERC20(orders[orderId].tokenAddress).transferFrom(msg.sender, orders[orderId].buyer, actualTokens), "Can't transfer");
         ethToTokenSwapInputEscrowCompleted(orderId);
         return true;
     }
