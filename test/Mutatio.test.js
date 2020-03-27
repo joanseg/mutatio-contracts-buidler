@@ -14,6 +14,8 @@ let mutatio;
 contract('Mutatio', (accounts) => {
   let tokenAddress
   const ethSold = 1000000000000000000 // 1 ether 
+  const ethSoldLow = 10000000000000000 // 0.01 ether
+  const ethCost = 1100000000000000
   const minTokens = 100
   const deadline = Date.now() + 90000 // now plus 15 minutes
 
@@ -158,22 +160,38 @@ contract('Mutatio', (accounts) => {
 
   describe('ethToTokenSwapInputExchangeCompleted()', async () => {
     it('The function ethToTokenSwapInputEscrowCompleted() should transfer to the exchange the ethSold amount', async () => {
-    console.log(exchangeAddressBalance)
-    await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
-    await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
-    await mutatio.ethToTokenSwapInput(
-      tokenAddress, 
-      minTokens,
-      deadline,
-      {from: buyerAccount, value: ethSold}
-    );
-    await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
-    let newExhangeAddressBalance = await web3.eth.getBalance(exchangeAddress)
-    let increment = newExhangeAddressBalance - exchangeAddressBalance
-    console.log(exchangeAddressBalance)
-    console.log(newExhangeAddressBalance)
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSold}
+      );
+      await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+      let newExhangeAddressBalance = await web3.eth.getBalance(exchangeAddress)
+      let increment = newExhangeAddressBalance - exchangeAddressBalance
+      console.log(increment)
+      console.log(ethSold - increment)
 
-    assert.equal(newExhangeAddressBalance, exchangeAddressBalance, "exchange did not receive the ethSold amount" )
+      assert.ok(increment >= ethSold - ethCost, "exchange did not receive the ethSold amount" )
+    });
+    it('The function ethToTokenSwapInputEscrowCompleted() should transfer to the exchange the ethSoldLow amount', async () => {
+      await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
+      await token.approve(mutatio.address, 1000, {from: exchangeAddress}) //exchangeAddress grants permission to Mutatio to transferFrom tokens
+      await mutatio.ethToTokenSwapInput(
+        tokenAddress, 
+        minTokens,
+        deadline,
+        {from: buyerAccount, value: ethSoldLow}
+      );
+      await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
+      let newExhangeAddressBalance = await web3.eth.getBalance(exchangeAddress)
+      let increment = newExhangeAddressBalance - exchangeAddressBalance
+      console.log(increment)
+      console.log(ethSoldLow - increment)
+
+      assert.ok(increment >= ethSoldLow - ethCost, "exchange did not receive the ethSold amount" )
     });
     it('Should set the orderId complet property to true', async () => {
       await token.transfer(exchangeAddress, 1000, {from: deployAccount}) //Mutatio contract transfers tokens from this contract to the exchange
@@ -200,7 +218,6 @@ contract('Mutatio', (accounts) => {
       );
       const tx = await mutatio.ethToTokenSwapInputExchangeCompleted(1, minTokens, {from: exchangeAddress})
       const ethToTokenSwapInputEscrowCompleted = tx.logs[0].args;
-      console.log(ethToTokenSwapInputEscrowCompleted);
 
       assert.equal(ethToTokenSwapInputEscrowCompleted.completed, true, "The event completed property should be true");
     });
